@@ -1,22 +1,29 @@
+#![feature(test)]
+extern crate test;
+
 use std::fs::File;
 use std::io::prelude::*;
 
-fn main() -> std::io::Result<()> {
-    let mut file = File::open("data.txt")?;
+fn main() {
+    let numbers = read_data();
+    println!("{0}", sum_captcha_functional(&numbers));
+}
+
+fn read_data() -> Vec<i32> {
+    let mut file = File::open("data.txt").unwrap();
     let mut contents = String::new();
     let mut numbers: Vec<i32> = vec![];
-    file.read_to_string(&mut contents)?;
+    file.read_to_string(&mut contents).unwrap();
     for c in contents.chars() {
         c.to_digit(10).map(|d| numbers.push(d as i32));
     }
-    println!("{0}", sum_captcha_2(numbers));
-    Ok(())
+    numbers
 }
 
-fn sum_captcha(nums: Vec<i32>) -> i32 {
+fn sum_captcha(nums: &Vec<i32>) -> i32 {
     let mut prev: i32 = -2;
     let mut sum: i32 = 0;
-    for n in &nums {
+    for n in nums {
         if *n == prev {
             sum += n;
         }
@@ -28,6 +35,13 @@ fn sum_captcha(nums: Vec<i32>) -> i32 {
         sum += prev;
     }
     return sum
+}
+
+fn sum_captcha_functional(nums: &Vec<i32>) -> i32 {
+    nums.iter()
+        .zip(nums.iter().cycle().skip(1))
+        .filter_map(|(a, b)| if a == b { Some(a) } else { None })
+        .sum()
 }
 
 fn sum_captcha_2(nums: Vec<i32>) -> i32 {
@@ -46,25 +60,36 @@ fn sum_captcha_2(nums: Vec<i32>) -> i32 {
 
 #[cfg(test)]
 mod test_part_1 {
+    use test::{Bencher, black_box};
     #[test]
     fn aoc_test_1() {
-        assert_eq!(::sum_captcha(vec!(1, 1, 2, 2)), 3);
+        let test_data1 = vec!(1, 1, 2, 2);
+        let test_data2 = vec!(1, 1, 1, 1);
+        let test_data3 = vec!(1, 2, 3, 4);
+        let test_data4 = vec!(9, 1, 2, 1, 2, 1, 2, 9);
+
+        assert_eq!(::sum_captcha(&test_data1), 3);
+        assert_eq!(::sum_captcha(&test_data2), 4);
+        assert_eq!(::sum_captcha(&test_data3), 0);
+        assert_eq!(::sum_captcha(&test_data4), 9);
+    }
+
+    #[bench]
+    fn bench_imperitive(b: &mut Bencher) {
+        let data = ::read_data();
+        b.iter(|| {
+            black_box(::sum_captcha(&data));
+        });
+    }
+
+    #[bench]
+    fn bench_zfunctional(b: &mut Bencher) {
+        let data = ::read_data();
+        b.iter(|| {
+            black_box(::sum_captcha_functional(&data));
+        });
     }
     
-    #[test]
-    fn aoc_test_2() {
-        assert_eq!(::sum_captcha(vec!(1, 1, 1, 1)), 4);
-    }
-
-    #[test]
-    fn aoc_test_3() {
-        assert_eq!(::sum_captcha(vec!(1, 2, 3, 4)), 0);
-    }
-
-    #[test]
-    fn aoc_test_4() {
-        assert_eq!(::sum_captcha(vec!(9, 1, 2, 1, 2, 1, 2, 9)), 9);
-    }
 }
 
 #[cfg(test)]
