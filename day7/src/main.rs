@@ -1,14 +1,13 @@
 #![feature(test)]
 extern crate test;
 
-use std::cell::RefCell;
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap};
 use std::fs;
-use std::rc::Rc;
 
 fn main() {
-    let lines: Vec<Line> = fs::read_to_string("data.txt").unwrap().lines().map(|line| {
-        parse(line)
+    let lines: HashMap<String, Line> = fs::read_to_string("data.txt").unwrap().lines().map(|line| {
+        let line = parse(line);
+        (line.name.clone(), line)
     }).collect();
 }
 
@@ -29,39 +28,41 @@ fn parse(input: &str) -> Line {
     }
 }
 
-struct Tree {
-    weight: u32,
+struct RefNode {
     name: String,
-    children: Vec<Rc<Tree>>,
 }
 
-fn build(lines: Vec<Line>) -> Tree {
-    let mut all : HashSet<&str> = HashSet::new();
-    let mut children: HashSet<&str> = HashSet::new();
-    let mut tree_map : HashMap<&str, (Tree, &Line)> = HashMap::new();
-    for line in &lines {
-        let tree = Tree {
-            weight: line.weight,
-            name: line.name.clone(),
-            children: vec![],
-        };
-        all.insert(&line.name);
-        line.children_names.iter().map(|n| children.insert(n));
-        tree_map.insert(&line.name, (tree, line));
-    }
-    let roots: Vec<&&str> = all.difference(&children).collect();
-    if roots.len() != 1 {
-        panic!("bad stuff");
-    }
-    let mut stack: Vec<(String, &Tree)> = Vec::new();
-    let mut root = tree_map.get(roots[0]).unwrap().0;
-    tree_map.get(roots[0]).unwrap().1.children_names.iter().map(|c| {
-        stack.push((c.clone(), &root));
-    });
-    loop {
-    }
-    Tree{weight: 0, name: "".to_string(), children: vec![]}
+struct Tree {
+    name: String,
+    weight: u32,
+    children: Vec<Tree>,
 }
+impl Tree {
+    fn find_mut(&mut self, name: &str) -> Option<&mut Tree> {
+        let mut stack = vec![self];
+        while !stack.is_empty() {
+            if let Some(node) = stack.pop() {
+                if node.name == name {
+                    return Some(node)
+                }
+            }
+        }
+        None
+    }
+}
+
+fn build(lines: &HashMap<String, Line>) -> Tree {
+    let mut parentMap = HashMap::new();
+    for (k, v) in lines.iter() {
+
+    }
+    Tree {
+        name: "".to_string(),
+        weight: 0,
+        children: vec![]
+    }
+}
+
 
 
 #[cfg(test)]
